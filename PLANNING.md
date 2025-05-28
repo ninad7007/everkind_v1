@@ -50,7 +50,7 @@ Based on industry best practices for voice AI systems:
 - **Vector Database**: Pinecone/Weaviate for therapy session context
 
 #### Frontend
-- **Web**: React.js with TypeScript
+- **Web**: React.js with Next.js
 - **Mobile**: React Native for cross-platform support
 - **Voice Interface**: Web Audio API with real-time processing
 - **State Management**: Redux Toolkit with RTK Query
