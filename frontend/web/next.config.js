@@ -35,11 +35,6 @@ const nextConfig = {
     ]
   },
   
-  // Performance optimizations
-  experimental: {
-    optimizeCss: true,
-  },
-  
   // Static file serving
   trailingSlash: false,
   
