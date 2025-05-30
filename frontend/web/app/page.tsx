@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { Mic, Send, Menu, User, Volume2 } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Mic, Send, Menu, User, Volume2, Loader2, Wifi, WifiOff } from 'lucide-react'
+import { useChat } from '../lib/useChat'
 
 interface Message {
   id: string
@@ -17,71 +18,69 @@ const moodOptions = [
   { id: 'anxious', label: 'Anxious', description: 'feeling anxious and worried' },
 ]
 
+const initialMessages = [
+  {
+    id: '1',
+    content: "I'm your AI Companion and Life Coach. 🤗✨\n\nWelcome to EverKind!\n\nLet's chat about what's on your mind. I'll help you find clarity, motivation, and the strength within yourself.\n\nReady to take the next step? What would you like to talk about today? ⭐",
+    sender: 'ai' as const,
+    timestamp: new Date(),
+  },
+]
+
 export default function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      content: "I'm your AI Companion and Life Coach. 🤗✨\n\nWelcome to EverKind!\n\nLet's chat about what's on your mind. I'll help you find clarity, motivation, and the strength within yourself.\n\nReady to take the next step? What would you like to talk about today? ⭐",
-      sender: 'ai',
-      timestamp: new Date(),
+  const {
+    messages,
+    isLoading,
+    error,
+    conversationId,
+    sendMessage,
+    clearMessages,
+    isApiHealthy,
+  } = useChat({
+    initialMessages,
+    onError: (error) => {
+      console.error('Chat error:', error);
     },
-  ])
+  });
+
   const [inputValue, setInputValue] = useState('')
   const [isRecording, setIsRecording] = useState(false)
   const [selectedMood, setSelectedMood] = useState<string | null>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const handleSendMessage = () => {
-    if (inputValue.trim()) {
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        content: inputValue,
-        sender: 'user',
-        timestamp: new Date(),
-      }
-      setMessages([...messages, newMessage])
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  const handleSendMessage = async () => {
+    if (inputValue.trim() && !isLoading) {
+      const messageContent = inputValue
       setInputValue('')
-      
-      // Simulate AI response
-      setTimeout(() => {
-        const aiResponse: Message = {
-          id: (Date.now() + 1).toString(),
-          content: "Thank you for sharing that with me. I understand how you're feeling. Let's work through this together. Can you tell me more about what's been on your mind lately?",
-          sender: 'ai',
-          timestamp: new Date(),
-        }
-        setMessages(prev => [...prev, aiResponse])
-      }, 1000)
+      await sendMessage(messageContent, selectedMood || undefined)
+      setSelectedMood(null)
     }
   }
 
-  const handleMoodSelect = (moodId: string) => {
+  const handleMoodSelect = async (moodId: string) => {
     setSelectedMood(moodId)
     const mood = moodOptions.find(m => m.id === moodId)
     if (mood) {
-      const moodMessage: Message = {
-        id: Date.now().toString(),
-        content: `I'm feeling ${mood.label.toLowerCase()} - ${mood.description}`,
-        sender: 'user',
-        timestamp: new Date(),
-      }
-      setMessages([...messages, moodMessage])
-      
-      // Simulate AI response
-      setTimeout(() => {
-        const aiResponse: Message = {
-          id: (Date.now() + 1).toString(),
-          content: `I hear that you're feeling ${mood.label.toLowerCase()}. That takes courage to share. Let's explore this together. What specific situations or thoughts have been contributing to these feelings?`,
-          sender: 'ai',
-          timestamp: new Date(),
-        }
-        setMessages(prev => [...prev, aiResponse])
-      }, 1000)
+      const moodMessage = `I'm feeling ${mood.label.toLowerCase()} - ${mood.description}`
+      await sendMessage(moodMessage, moodId)
     }
   }
 
   const toggleRecording = () => {
     setIsRecording(!isRecording)
     // TODO: Implement actual voice recording
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSendMessage()
+    }
   }
 
   return (
@@ -93,6 +92,23 @@ export default function ChatPage() {
             <Menu className="w-5 h-5 text-gray-600" />
           </button>
           <h1 className="text-xl font-semibold text-therapeutic-primary">EverKind</h1>
+          {/* API Health Indicator */}
+          <div className="flex items-center space-x-1">
+            {isApiHealthy ? (
+              <div title="Connected to AI therapist">
+                <Wifi className="w-4 h-4 text-green-500" />
+              </div>
+            ) : (
+              <div title="Using offline responses">
+                <WifiOff className="w-4 h-4 text-orange-500" />
+              </div>
+            )}
+            {conversationId && (
+              <span className="text-xs text-gray-500" title={`Conversation ID: ${conversationId}`}>
+                Connected
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex items-center space-x-2">
           <button className="px-4 py-2 bg-therapeutic-primary text-white rounded-lg text-sm font-medium hover:bg-therapeutic-secondary transition-colors">
@@ -104,6 +120,24 @@ export default function ChatPage() {
           </button>
         </div>
       </header>
+
+      {/* API Status Banner */}
+      {!isApiHealthy && (
+        <div className="bg-orange-50 border-b border-orange-200 px-4 py-2">
+          <p className="text-sm text-orange-800">
+            🔄 Using offline responses - some features may be limited.
+          </p>
+        </div>
+      )}
+
+      {/* Error Banner */}
+      {error && (
+        <div className="bg-red-50 border-b border-red-200 px-4 py-2">
+          <p className="text-sm text-red-800">
+            ⚠️ {error}
+          </p>
+        </div>
+      )}
 
       {/* Auth Banner */}
       <div className="bg-orange-50 border-b border-orange-200 px-4 py-2">
@@ -127,20 +161,40 @@ export default function ChatPage() {
               }`}
             >
               <p className="whitespace-pre-line">{message.content}</p>
+              {message.sender === 'ai' && (
+                <span className="text-xs opacity-60 mt-2 block">
+                  {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              )}
             </div>
           </div>
         ))}
+        
+        {/* Loading indicator */}
+        {isLoading && (
+          <div className="flex justify-start">
+            <div className="chat-bubble chat-bubble-ai">
+              <div className="flex items-center space-x-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Thinking...</span>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Mood Selection Buttons */}
-      {messages.length === 1 && (
+      {messages.length === 1 && !isLoading && (
         <div className="px-4 pb-4">
           <div className="grid grid-cols-2 gap-3">
             {moodOptions.map((mood) => (
               <button
                 key={mood.id}
                 onClick={() => handleMoodSelect(mood.id)}
-                className="mood-button text-left"
+                disabled={isLoading}
+                className="mood-button text-left disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="font-medium">{mood.label}</div>
                 <div className="text-sm opacity-90">{mood.description}</div>
@@ -158,24 +212,48 @@ export default function ChatPage() {
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              placeholder="Share your thoughts..."
-              className="input-field pr-12"
+              onKeyPress={handleKeyPress}
+              placeholder={isLoading ? "AI is thinking..." : "Share your thoughts..."}
+              disabled={isLoading}
+              className="input-field pr-12 disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <button
               onClick={handleSendMessage}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-therapeutic-primary transition-colors"
+              disabled={isLoading || !inputValue.trim()}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-therapeutic-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Send className="w-5 h-5" />
+              {isLoading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Send className="w-5 h-5" />
+              )}
             </button>
           </div>
           <button
             onClick={toggleRecording}
-            className={`voice-button ${isRecording ? 'bg-red-500 text-white border-red-500' : ''}`}
+            disabled={isLoading}
+            className={`voice-button disabled:opacity-50 disabled:cursor-not-allowed ${
+              isRecording ? 'bg-red-500 text-white border-red-500' : ''
+            }`}
           >
             <Mic className="w-5 h-5" />
           </button>
         </div>
+        
+        {/* Selected mood indicator */}
+        {selectedMood && (
+          <div className="mt-2 flex items-center justify-between">
+            <span className="text-sm text-therapeutic-primary">
+              Mood: {moodOptions.find(m => m.id === selectedMood)?.label}
+            </span>
+            <button
+              onClick={() => setSelectedMood(null)}
+              className="text-xs text-gray-500 hover:text-gray-700"
+            >
+              Clear
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
