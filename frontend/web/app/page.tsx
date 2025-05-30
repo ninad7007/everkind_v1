@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Mic, Send, Menu, User, Volume2, Loader2, Wifi, WifiOff } from 'lucide-react'
 import { useChat } from '../lib/useChat'
+import { useRouter } from 'next/navigation'
 
 interface Message {
   id: string
@@ -28,6 +29,7 @@ const initialMessages = [
 ]
 
 export default function ChatPage() {
+  const router = useRouter()
   const {
     messages,
     isLoading,
@@ -76,6 +78,10 @@ export default function ChatPage() {
     // TODO: Implement actual voice recording
   }
 
+  const handleVoiceClick = () => {
+    router.push('/voice')
+  }
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -114,7 +120,10 @@ export default function ChatPage() {
           <button className="px-4 py-2 bg-therapeutic-primary text-white rounded-lg text-sm font-medium hover:bg-therapeutic-secondary transition-colors">
             Journal
           </button>
-          <button className="px-4 py-2 bg-therapeutic-primary text-white rounded-lg text-sm font-medium hover:bg-therapeutic-secondary transition-colors flex items-center space-x-1">
+          <button 
+            onClick={handleVoiceClick}
+            className="px-4 py-2 bg-therapeutic-primary text-white rounded-lg text-sm font-medium hover:bg-therapeutic-secondary transition-colors flex items-center space-x-1"
+          >
             <Volume2 className="w-4 h-4" />
             <span>Voice</span>
           </button>
@@ -181,23 +190,21 @@ export default function ChatPage() {
             </div>
           </div>
         )}
-        
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Mood Selection Buttons */}
-      {messages.length === 1 && !isLoading && (
-        <div className="px-4 pb-4">
-          <div className="grid grid-cols-2 gap-3">
+      {/* Mood Selection */}
+      {!selectedMood && (
+        <div className="bg-white border-t border-gray-200 px-4 py-3">
+          <p className="text-sm text-gray-600 mb-2">How are you feeling today?</p>
+          <div className="flex flex-wrap gap-2">
             {moodOptions.map((mood) => (
               <button
                 key={mood.id}
                 onClick={() => handleMoodSelect(mood.id)}
-                disabled={isLoading}
-                className="mood-button text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-sm text-gray-700 transition-colors"
               >
-                <div className="font-medium">{mood.label}</div>
-                <div className="text-sm opacity-90">{mood.description}</div>
+                {mood.label}
               </button>
             ))}
           </div>
@@ -205,55 +212,27 @@ export default function ChatPage() {
       )}
 
       {/* Input Area */}
-      <div className="bg-white border-t border-gray-200 px-4 py-4">
-        <div className="flex items-center space-x-3">
+      <div className="bg-white border-t border-gray-200 px-4 py-3">
+        <div className="flex items-end space-x-2">
           <div className="flex-1 relative">
-            <input
-              type="text"
+            <textarea
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder={isLoading ? "AI is thinking..." : "Share your thoughts..."}
-              disabled={isLoading}
-              className="input-field pr-12 disabled:opacity-50 disabled:cursor-not-allowed"
+              onKeyDown={handleKeyPress}
+              placeholder="Type your message..."
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-therapeutic-primary focus:border-transparent resize-none"
+              rows={1}
+              style={{ minHeight: '44px', maxHeight: '200px' }}
             />
-            <button
-              onClick={handleSendMessage}
-              disabled={isLoading || !inputValue.trim()}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-therapeutic-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <Send className="w-5 h-5" />
-              )}
-            </button>
           </div>
           <button
-            onClick={toggleRecording}
-            disabled={isLoading}
-            className={`voice-button disabled:opacity-50 disabled:cursor-not-allowed ${
-              isRecording ? 'bg-red-500 text-white border-red-500' : ''
-            }`}
+            onClick={handleSendMessage}
+            disabled={!inputValue.trim() || isLoading}
+            className="p-3 bg-therapeutic-primary text-white rounded-lg hover:bg-therapeutic-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Mic className="w-5 h-5" />
+            <Send className="w-5 h-5" />
           </button>
         </div>
-        
-        {/* Selected mood indicator */}
-        {selectedMood && (
-          <div className="mt-2 flex items-center justify-between">
-            <span className="text-sm text-therapeutic-primary">
-              Mood: {moodOptions.find(m => m.id === selectedMood)?.label}
-            </span>
-            <button
-              onClick={() => setSelectedMood(null)}
-              className="text-xs text-gray-500 hover:text-gray-700"
-            >
-              Clear
-            </button>
-          </div>
-        )}
       </div>
     </div>
   )
