@@ -5,10 +5,10 @@ A comprehensive AI-powered therapeutic chat application designed to provide acce
 ## 🌟 Overview
 
 EverKind is a modern therapeutic platform that combines:
-- **Real-time voice interactions** with <700ms latency
+- **Real-time AI chat** with OpenAI GPT-4 integration
 - **Evidence-based CBT techniques** for depression and anxiety
-- **HIPAA-compliant architecture** for healthcare data
-- **Crisis management protocols** for user safety
+- **Mood-aware responses** tailored to user emotional state
+- **Production-ready architecture** with comprehensive error handling
 - **Beautiful, accessible UI** designed for therapeutic use
 
 ## 🚀 Live Demo
@@ -18,6 +18,7 @@ EverKind is a modern therapeutic platform that combines:
 The application is currently deployed and accessible with:
 - ✅ SSL/TLS encryption via Let's Encrypt
 - ✅ Production-optimized Next.js build
+- ✅ FastAPI backend with OpenAI integration
 - ✅ PM2 process management
 - ✅ Caddy reverse proxy with security headers
 - ✅ Health monitoring at `/api/health`
@@ -25,7 +26,8 @@ The application is currently deployed and accessible with:
 ## 🏗️ Architecture
 
 ```
-Internet → Caddy (SSL/443) → Next.js App (3000) → PM2 Process Manager
+Internet → Caddy (SSL/443) → Next.js Frontend (3000) → FastAPI Backend (8000) → OpenAI GPT-4
+                           → PM2 Process Manager
 ```
 
 ### Technology Stack
@@ -34,34 +36,39 @@ Internet → Caddy (SSL/443) → Next.js App (3000) → PM2 Process Manager
 - Next.js 14 with App Router
 - React 18 with TypeScript
 - Tailwind CSS + shadcn/ui
+- Real-time chat interface
 - Therapeutic design system
 
-**Backend** (Planned):
-- FastAPI with Python
-- PostgreSQL database
-- Redis for caching
-- WebSocket for real-time voice
+**Backend**:
+- FastAPI with Python 3.8+
+- OpenAI GPT-4 integration
+- CBT-focused therapeutic prompts
+- Pydantic data validation
+- Comprehensive error handling
+- 24 unit tests (all passing ✅)
 
 **AI/ML**:
-- OpenAI Whisper (Speech-to-Text)
-- ElevenLabs (Text-to-Speech)
-- GPT-4 Turbo + Llama 3.2 3B
+- OpenAI GPT-4 for therapeutic conversations
+- Mood-aware response generation
+- Evidence-based CBT techniques
+- Fallback responses for resilience
 
 **Infrastructure**:
 - VM deployment with Caddy
 - PM2 process management
 - Let's Encrypt SSL certificates
-- HIPAA-compliant hosting
+- CORS-enabled API communication
 
 ## 🛠️ Development Setup
 
 ### Prerequisites
 
 - Node.js 18+
+- Python 3.8+
+- OpenAI API key
 - npm or yarn
-- SSH access to deployment VM (for contributors)
 
-### Local Development
+### Full Stack Development
 
 1. **Clone the repository**:
 ```bash
@@ -69,18 +76,26 @@ git clone https://github.com/ninad7007/everkind_v1.git
 cd everkind_v1
 ```
 
-2. **Install frontend dependencies**:
+2. **Setup Backend**:
+```bash
+cd backend
+pip install -r requirements.txt
+cp env.example .env
+# Add your OPENAI_API_KEY to .env
+python3 start.py
+```
+
+3. **Setup Frontend** (in new terminal):
 ```bash
 cd frontend/web
 npm install
-```
-
-3. **Start development server**:
-```bash
 npm run dev
 ```
 
-4. **Open in browser**: http://localhost:3000
+4. **Access Application**:
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8000
+   - API Docs: http://localhost:8000/docs
 
 ### Project Structure
 
@@ -89,10 +104,17 @@ everkind_v1/
 ├── frontend/web/           # Next.js frontend application
 │   ├── app/               # Next.js App Router pages
 │   ├── components/        # React components
-│   ├── lib/              # Utility functions
+│   ├── lib/              # API client and utilities
 │   └── public/           # Static assets
+├── backend/               # FastAPI backend application
+│   ├── api/              # API routes and services
+│   ├── tests/            # Unit tests (24 tests)
+│   ├── main.py           # FastAPI application
+│   ├── start.py          # Server startup script
+│   └── requirements.txt  # Python dependencies
 ├── deploy.sh             # Production deployment script
 ├── DEPLOYMENT.md         # Detailed deployment guide
+├── INTEGRATION.md        # Frontend-backend integration guide
 ├── PLANNING.md           # Project architecture & roadmap
 ├── TASKS.md             # Development task tracking
 └── README.md            # This file
